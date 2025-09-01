@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, MessageSquare, ChevronLeft, ChevronRight, Mic, Square, Play, Pause, Video, VideoOff } from 'lucide-react';
+import { ChevronLeft, Upload, MessageSquare, Mic, Square, Play, Pause, Video, VideoOff, Sun, Moon, ChevronRight } from 'lucide-react';
 
 interface InterviewPageProps {
   onBack: () => void;
 }
 
 const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
+  const [isDark, setIsDark] = useState(true);
   const [pdfName, setPdfName] = useState<string>("");
   const [jobDescription, setJobDescription] = useState<string>("");
   const [questions, setQuestions] = useState<string[]>([]);
@@ -14,8 +15,6 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   const [sessionId, setSessionId] = useState<string>("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [showQuestions, setShowQuestions] = useState<boolean>(false);
-  
-  // Audio/Video states
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [recordings, setRecordings] = useState<{ [key: number]: Blob }>({});
@@ -27,20 +26,21 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
-  // Camera toggle
+  const theme = {
+    dark: { bg: 'bg-black', text: 'text-white', textSecondary: 'text-slate-400', cardBg: 'bg-slate-900/40', border: 'border-slate-800/50', accent: 'from-slate-100 via-blue-100 to-slate-200', buttonPrimary: 'from-blue-600 via-blue-700 to-blue-800', glowBlue: 'shadow-blue-500/20' },
+    light: { bg: 'bg-white', text: 'text-slate-900', textSecondary: 'text-slate-600', cardBg: 'bg-white/80', border: 'border-slate-200/60', accent: 'from-slate-900 via-blue-900 to-slate-800', buttonPrimary: 'from-blue-600 via-blue-700 to-blue-800', glowBlue: 'shadow-blue-500/10' }
+  };
+  const t = theme[isDark ? 'dark' : 'light'];
+
   const toggleCamera = async () => {
     try {
       if (!cameraEnabled) {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         setMediaStream(stream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
+        if (videoRef.current) videoRef.current.srcObject = stream;
         setCameraEnabled(true);
       } else {
-        if (mediaStream) {
-          mediaStream.getTracks().forEach(track => track.stop());
-        }
+        if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
         setMediaStream(null);
         setCameraEnabled(false);
       }
@@ -49,7 +49,6 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     }
   };
 
-  // Handle file upload
   const handleFileChange = async (eOrFile: React.ChangeEvent<HTMLInputElement> | File) => {
     setError("");
     const file = eOrFile instanceof File ? eOrFile : eOrFile.target.files?.[0];
@@ -72,7 +71,6 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     }
   };
 
-  // Generate questions
   const handleGenerate = async () => {
     setError("");
     if (!sessionId) return setError("Please upload your resume first.");
@@ -100,7 +98,6 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     }
   };
 
-  // Audio recording functions
   const startRecording = async () => {
     try {
       const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -151,7 +148,6 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     }
   };
 
-  // Navigation
   const goToQuestion = (direction: 'prev' | 'next') => {
     const newIndex = direction === 'next' ? currentQuestionIndex + 1 : currentQuestionIndex - 1;
     if (newIndex >= 0 && newIndex < questions.length) {
@@ -167,7 +163,6 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     stopPlaying();
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
@@ -176,135 +171,102 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
 
   if (showQuestions && questions.length > 0) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#16213e] flex px-6 py-4">
-        {/* Left Side - Video */}
-        <div className="w-1/3 pr-4">
-          <button onClick={backToSetup} className="mb-4 flex items-center text-indigo-300 hover:text-white transition-colors">
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Back to Setup
-          </button>
+      <div className={`h-screen w-full transition-all duration-700 ${t.bg} ${t.text} flex overflow-hidden`}
+           style={{fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'}}>
+        
+        <div className="w-2/5 p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-6">
+            <button onClick={backToSetup} className={`flex items-center ${t.textSecondary} hover:${t.text} transition-colors group`}>
+              <ChevronLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              <span className="font-medium tracking-wide" style={{fontSize: '14px'}}>Back to Setup</span>
+            </button>
+            <button onClick={() => setIsDark(!isDark)} className={`p-2.5 ${t.cardBg} backdrop-blur-2xl ${t.border} rounded-xl hover:scale-105 transition-all duration-300 ${t.glowBlue} shadow-lg`}>
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+          </div>
           
-          <div className="relative bg-gray-900 rounded-2xl overflow-hidden aspect-video mb-4">
+          <div className={`relative ${isDark ? 'bg-slate-900' : 'bg-slate-100'} rounded-3xl overflow-hidden aspect-video flex-1 mb-6 ${t.glowBlue} shadow-2xl`}>
             <video ref={videoRef} autoPlay muted className="w-full h-full object-cover" />
             {!cameraEnabled && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-                <VideoOff className="w-16 h-16 text-gray-400" />
+              <div className={`absolute inset-0 flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                <VideoOff className={`w-16 h-16 ${t.textSecondary}`} />
               </div>
             )}
           </div>
 
-          <button
-            onClick={toggleCamera}
-            className={`w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl font-semibold transition-all ${
-              cameraEnabled 
-                ? 'bg-red-600 hover:bg-red-700 text-white' 
-                : 'bg-green-600 hover:bg-green-700 text-white'
-            }`}
-          >
+          <button onClick={toggleCamera} className={`w-full flex items-center justify-center space-x-3 py-4 px-6 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 ${t.glowBlue} shadow-lg tracking-wide ${cameraEnabled ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white' : `bg-gradient-to-r ${t.buttonPrimary} text-white`}`} style={{fontSize: '15px', fontWeight: '600'}}>
             {cameraEnabled ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
             <span>{cameraEnabled ? 'Turn Off Camera' : 'Turn On Camera'}</span>
           </button>
         </div>
 
-        {/* Right Side - Question Interface */}
-        <div className="w-2/3 pl-4">
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 h-full flex flex-col">
-            {/* Progress */}
-            <div className="mb-6">
-              <div className="flex justify-between text-indigo-200 text-sm mb-2">
-                <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-                <span>{Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}% Complete</span>
+        <div className="w-3/5 p-6 flex flex-col h-full">
+          <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-3xl p-8 h-full flex flex-col ${t.glowBlue} shadow-2xl`}>
+            
+            <div className="mb-8">
+              <div className={`flex justify-between ${t.textSecondary} mb-3`} style={{fontSize: '13px', fontWeight: '500'}}>
+                <span className="tracking-wide">Question {currentQuestionIndex + 1} of {questions.length}</span>
+                <span className="tracking-wide">{Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}% Complete</span>
               </div>
-              <div className="w-full bg-indigo-900/50 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-indigo-500 to-blue-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-                />
+              <div className={`w-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'} rounded-full h-1.5`}>
+                <div className={`bg-gradient-to-r ${t.buttonPrimary} h-1.5 rounded-full transition-all duration-500`} style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }} />
               </div>
             </div>
 
-            {/* Question */}
-            <div className="flex-1 flex items-center justify-center mb-8">
-              <h2 className="text-4xl font-bold text-indigo-100 text-center leading-relaxed px-4">
+            <div className="flex-1 flex items-center justify-center mb-8 px-4">
+              <h2 className={`${t.text} text-center leading-relaxed tracking-tight font-medium`} style={{fontSize: '24px', fontWeight: '500', lineHeight: '1.4'}}>
                 {questions[currentQuestionIndex]}
               </h2>
             </div>
 
-            {/* Recording Controls */}
-            <div className="bg-indigo-900/30 rounded-xl p-6 mb-6 border border-indigo-700">
+            <div className={`${isDark ? 'bg-slate-800/50' : 'bg-slate-100/80'} rounded-2xl p-6 mb-6 ${t.border}`}>
               <div className="flex justify-center space-x-4 mb-4">
                 {!isRecording ? (
-                  <button
-                    onClick={startRecording}
-                    disabled={isPlaying}
-                    className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white px-6 py-3 rounded-lg transition-colors font-semibold"
-                  >
-                    <Mic className="w-5 h-5" />
+                  <button onClick={startRecording} disabled={isPlaying} className="flex items-center space-x-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:opacity-50 text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 shadow-lg" style={{fontSize: '14px', fontWeight: '600'}}>
+                    <Mic className="w-4 h-4" />
                     <span>Start Recording</span>
                   </button>
                 ) : (
-                  <button
-                    onClick={stopRecording}
-                    className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors font-semibold animate-pulse"
-                  >
-                    <Square className="w-5 h-5" />
+                  <button onClick={stopRecording} className="flex items-center space-x-3 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide animate-pulse shadow-lg" style={{fontSize: '14px', fontWeight: '600'}}>
+                    <Square className="w-4 h-4" />
                     <span>Stop Recording</span>
                   </button>
                 )}
 
                 {recordings[currentQuestionIndex] && !isRecording && (
-                  <button
-                    onClick={isPlaying ? stopPlaying : playRecording}
-                    className={`flex items-center space-x-2 px-6 py-3 rounded-lg transition-colors font-semibold ${
-                      isPlaying ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'
-                    } text-white`}
-                  >
-                    {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                  <button onClick={isPlaying ? stopPlaying : playRecording} className={`flex items-center space-x-3 px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 shadow-lg text-white ${isPlaying ? 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800' : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'}`} style={{fontSize: '14px', fontWeight: '600'}}>
+                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                     <span>{isPlaying ? 'Stop Playing' : 'Play Answer'}</span>
                   </button>
                 )}
               </div>
 
               <div className="text-center">
-                {recordings[currentQuestionIndex] && (
-                  <div className="text-green-400 text-sm">✓ Answer recorded</div>
-                )}
-                {isRecording && (
-                  <div className="text-red-400 text-sm animate-pulse">🔴 Recording...</div>
-                )}
+                {recordings[currentQuestionIndex] && <div className="text-green-400 font-medium tracking-wide" style={{fontSize: '13px'}}>✓ Answer Recorded Successfully</div>}
+                {isRecording && <div className="text-red-400 animate-pulse font-medium tracking-wide" style={{fontSize: '13px'}}>🔴 Recording in Progress...</div>}
               </div>
             </div>
 
-            {/* Navigation */}
             <div className="flex justify-between items-center">
-              <button
-                onClick={() => goToQuestion('prev')}
-                disabled={currentQuestionIndex === 0}
-                className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg transition-colors font-semibold"
-              >
-                <ChevronLeft className="w-5 h-5" />
+              <button onClick={() => goToQuestion('prev')} disabled={currentQuestionIndex === 0} className={`flex items-center space-x-2 bg-gradient-to-r ${t.buttonPrimary} hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 ${t.glowBlue} shadow-lg`} style={{fontSize: '14px', fontWeight: '600'}}>
+                <ChevronLeft className="w-4 h-4" />
                 <span>Previous</span>
               </button>
 
-              <div className="text-indigo-200 text-center">
-                <div className="text-sm">{Object.keys(recordings).length} of {questions.length} answered</div>
+              <div className={`text-center ${t.textSecondary}`}>
+                <div className="font-medium tracking-wide" style={{fontSize: '13px'}}>{Object.keys(recordings).length} of {questions.length} Completed</div>
               </div>
 
-              <button
-                onClick={() => goToQuestion('next')}
-                disabled={currentQuestionIndex === questions.length - 1}
-                className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg transition-colors font-semibold"
-              >
+              <button onClick={() => goToQuestion('next')} disabled={currentQuestionIndex === questions.length - 1} className={`flex items-center space-x-2 bg-gradient-to-r ${t.buttonPrimary} hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 ${t.glowBlue} shadow-lg`} style={{fontSize: '14px', fontWeight: '600'}}>
                 <span>Next</span>
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Complete Button */}
             {currentQuestionIndex === questions.length - 1 && Object.keys(recordings).length === questions.length && (
               <div className="mt-6 text-center">
-                <button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transition-all transform hover:scale-105">
-                  Complete Interview 🎉
+                <button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all transform hover:scale-105 shadow-2xl tracking-wide" style={{fontSize: '16px', fontWeight: '600'}}>
+                  Complete Interview Session 🎉
                 </button>
               </div>
             )}
@@ -317,57 +279,68 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#16213e] flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-2xl bg-white/10 backdrop-blur-xl rounded-3xl p-10 border border-gray-700">
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <MessageSquare className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-4xl font-bold text-indigo-100 mb-2">AI Interview Assistant</h1>
-          <p className="text-indigo-200 text-lg">Upload your resume and job description to get started</p>
-        </div>
-
-        {/* PDF Upload */}
-        <div
-          className="w-full bg-indigo-900/30 rounded-xl border-2 border-dashed border-indigo-400 hover:border-indigo-300 transition cursor-pointer flex flex-col items-center py-8 mb-6"
-          onClick={() => fileInputRef.current?.click()}
-          onDrop={(e) => {
-            e.preventDefault();
-            const file = e.dataTransfer.files?.[0];
-            if (file?.type === "application/pdf") handleFileChange(file);
-            else setError("Please upload a PDF file.");
-          }}
-          onDragOver={(e) => e.preventDefault()}
-        >
-          <input type="file" accept="application/pdf" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
-          <Upload className="w-12 h-12 text-indigo-300 mb-3" />
-          <span className="text-indigo-200 font-semibold">Drop your resume PDF here or click to select</span>
-          {pdfName && <span className="text-indigo-100 font-bold mt-2">{pdfName}</span>}
-        </div>
-
-        {/* Job Description */}
-        <textarea
-          className="w-full h-32 p-4 border border-indigo-700 rounded-xl mb-6 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none bg-indigo-900/30 text-indigo-100 placeholder:text-indigo-400"
-          placeholder="Paste the job description here..."
-          value={jobDescription}
-          onChange={(e) => setJobDescription(e.target.value)}
-          disabled={loading}
-        />
-
-        {/* Generate Button */}
-        <button
-          className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:from-indigo-700 hover:to-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-lg"
-          onClick={handleGenerate}
-          disabled={loading}
-        >
-          {loading ? "Generating..." : "Generate Interview Questions"}
-        </button>
-
-        {error && (
-          <div className="w-full text-red-400 mt-4 text-center font-semibold bg-red-900/30 border border-red-400 rounded-lg py-3 px-4">
-            {error}
-          </div>
+    <div className={`h-screen w-full transition-all duration-700 ${t.bg} ${t.text} flex items-center justify-center overflow-hidden`} style={{fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'}}>
+      
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        {isDark ? (
+          <>
+            <div className="absolute top-0 left-1/3 w-[600px] h-[600px] bg-gradient-radial from-blue-900/15 via-slate-900/10 to-transparent rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-0 right-1/3 w-[500px] h-[500px] bg-gradient-radial from-slate-800/20 via-blue-900/10 to-transparent rounded-full blur-3xl" style={{animationDelay: '3s'}} />
+          </>
+        ) : (
+          <>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-blue-50/60 to-slate-50/40 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-slate-100/50 to-blue-100/30 rounded-full blur-3xl" />
+          </>
         )}
+      </div>
+
+      <div className="relative z-10 w-full max-w-2xl mx-6">
+        
+        <div className="flex items-center justify-between mb-12">
+          <button onClick={onBack} className={`flex items-center ${t.textSecondary} hover:${t.text} transition-colors group`}>
+            <ChevronLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium tracking-wide" style={{fontSize: '14px'}}>Back to Home</span>
+          </button>
+          
+          <button onClick={() => setIsDark(!isDark)} className={`p-3 ${t.cardBg} backdrop-blur-2xl ${t.border} rounded-2xl hover:scale-105 transition-all duration-300 ${t.glowBlue} shadow-lg`}>
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+        </div>
+
+        <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-3xl p-10 ${t.glowBlue} shadow-2xl`}>
+          
+          <div className="text-center mb-10">
+            <div className={`w-16 h-16 bg-gradient-to-br ${t.buttonPrimary} rounded-2xl flex items-center justify-center mx-auto mb-6 ${t.glowBlue} shadow-lg`}>
+              <MessageSquare className="w-8 h-8 text-white" />
+            </div>
+            <h1 className={`font-bold mb-4 bg-gradient-to-r ${t.accent} bg-clip-text text-transparent tracking-tight`} style={{fontSize: '36px', fontWeight: '700'}}>
+              AI Interview Assistant
+            </h1>
+            <p className={`${t.textSecondary} font-normal tracking-wide`} style={{fontSize: '16px', lineHeight: '1.5'}}>
+              Upload your resume and job description to begin your personalized preparation
+            </p>
+          </div>
+
+          <div className={`w-full ${isDark ? 'bg-blue-900/20' : 'bg-blue-50/80'} rounded-2xl border-2 border-dashed ${isDark ? 'border-blue-400/50' : 'border-blue-300'} hover:border-blue-400 transition-all cursor-pointer flex flex-col items-center py-8 mb-6 group`} onClick={() => fileInputRef.current?.click()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file?.type === "application/pdf") handleFileChange(file); else setError("Please upload a PDF file."); }} onDragOver={(e) => e.preventDefault()}>
+            <input type="file" accept="application/pdf" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+            <Upload className={`w-10 h-10 text-blue-500 mb-4 group-hover:scale-110 transition-transform`} />
+            <span className={`${t.text} font-semibold tracking-wide`} style={{fontSize: '15px'}}>Drop your resume PDF here or click to select</span>
+            {pdfName && <span className="text-blue-500 font-semibold mt-3 tracking-wide" style={{fontSize: '14px'}}>{pdfName}</span>}
+          </div>
+
+          <textarea className={`w-full h-32 p-4 ${t.border} rounded-2xl mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none ${t.cardBg} ${t.text} ${t.textSecondary} backdrop-blur-xl transition-all duration-300 font-normal tracking-wide`} placeholder="Paste the complete job description here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} disabled={loading} style={{fontSize: '14px', lineHeight: '1.5'}} />
+
+          <button className={`w-full py-4 bg-gradient-to-r ${t.buttonPrimary} text-white font-semibold rounded-2xl ${t.glowBlue} shadow-2xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed tracking-wide`} onClick={handleGenerate} disabled={loading} style={{fontSize: '16px', fontWeight: '600'}}>
+            {loading ? "Generating Questions..." : "Generate Interview Questions"}
+          </button>
+
+          {error && (
+            <div className="w-full text-red-400 mt-6 text-center font-medium bg-red-900/20 border border-red-400/30 rounded-2xl py-4 px-6 tracking-wide" style={{fontSize: '14px'}}>
+              {error}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

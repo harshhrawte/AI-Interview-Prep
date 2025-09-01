@@ -1,230 +1,256 @@
+import { Link } from "react-router-dom";
 import React, { useState } from 'react';
-import { ChevronRight, Upload, MessageSquare, Target, Zap, ArrowRight } from 'lucide-react';
-import InterviewPage from './InterviewPage';
+import { ChevronRight, Upload, MessageSquare, Target, Zap, ArrowRight, Moon, Sun, Sparkles } from 'lucide-react';
 
-const HomePage: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'home' | 'interview'>('home');
+const HomePage = () => {
+  const [isDark, setIsDark] = useState(true);
+  const [currentPage, setCurrentPage] = useState('home');
 
-  if (currentPage === 'interview') {
-    return <InterviewPage onBack={() => setCurrentPage('home')} />;
-  }
+  const theme = {
+    dark: {
+      bg: 'bg-black',
+      text: 'text-white',
+      textSecondary: 'text-slate-400',
+      cardBg: 'bg-slate-900/40',
+      border: 'border-slate-800/50',
+      accent: 'from-slate-100 via-blue-100 to-slate-200',
+      accentSolid: 'from-slate-800 via-blue-900 to-navy-900',
+      buttonPrimary: 'from-blue-600 via-blue-700 to-blue-800',
+      glowBlue: 'shadow-blue-500/20'
+    },
+    light: {
+      bg: 'bg-white',
+      text: 'text-slate-900',
+      textSecondary: 'text-slate-600',
+      cardBg: 'bg-white/80',
+      border: 'border-slate-200/60',
+      accent: 'from-slate-900 via-blue-900 to-slate-800',
+      accentSolid: 'from-blue-50 via-slate-50 to-blue-50',
+      buttonPrimary: 'from-blue-600 via-blue-700 to-blue-800',
+      glowBlue: 'shadow-blue-500/10'
+    }
+  };
+
+  const t = theme[isDark ? 'dark' : 'light'];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0F0F23] via-[#1a1a2e] to-[#16213e] text-white overflow-x-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-indigo-500 to-purple-600 opacity-20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-1/4 right-0 w-80 h-80 bg-gradient-to-bl from-blue-500 to-cyan-500 opacity-15 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}} />
-        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-gradient-to-tr from-purple-500 to-pink-500 opacity-20 rounded-full blur-2xl animate-pulse" style={{animationDelay: '2s'}} />
-        <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-white opacity-5 rounded-full blur-xl animate-ping" style={{transform: 'translate(-50%, -50%)', animationDuration: '4s'}} />
+    <div className={`min-h-screen transition-all duration-700 ${t.bg} ${t.text} relative overflow-hidden`} 
+         style={{fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'}}>
+      
+      {/* Sophisticated Navy Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        {isDark ? (
+          <>
+            <div className="absolute top-0 left-1/3 w-[600px] h-[600px] bg-gradient-radial from-blue-900/15 via-slate-900/10 to-transparent rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-0 right-1/3 w-[500px] h-[500px] bg-gradient-radial from-slate-800/20 via-blue-900/10 to-transparent rounded-full blur-3xl" style={{animationDelay: '3s'}} />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-gradient-radial from-slate-900/30 via-transparent to-transparent rounded-full" />
+          </>
+        ) : (
+          <>
+            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-blue-50/60 to-slate-50/40 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-slate-100/50 to-blue-100/30 rounded-full blur-3xl" />
+          </>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-20 flex justify-between items-center p-8 max-w-7xl mx-auto">
+      <nav className="relative z-20 flex justify-between items-center p-6 max-w-7xl mx-auto">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-            <MessageSquare className="w-6 h-6 text-white" />
+          <div className={`w-11 h-11 bg-gradient-to-br ${t.buttonPrimary} rounded-2xl flex items-center justify-center ${t.glowBlue} shadow-lg`}>
+            <MessageSquare className="w-5 h-5 text-white" />
           </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            AI Interview Pro
+          <span className="text-xl font-semibold tracking-tight" style={{fontSize: '20px', fontWeight: '600'}}>
+            <span className={`bg-gradient-to-r ${t.accent} bg-clip-text text-transparent`}>Interview</span>
+            <span className={`ml-1 ${t.text}`}>Pro</span>
           </span>
         </div>
-        <div className="hidden md:flex items-center space-x-8 text-gray-300">
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
-          <a href="#testimonials" className="hover:text-white transition-colors">Reviews</a>
+        
+        <div className="flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-8">
+            <a href="#features" className={`${t.textSecondary} hover:${t.text} transition-colors text-sm font-medium tracking-wide`}>Features</a>
+            <a href="#process" className={`${t.textSecondary} hover:${t.text} transition-colors text-sm font-medium tracking-wide`}>Process</a>
+            <a href="#about" className={`${t.textSecondary} hover:${t.text} transition-colors text-sm font-medium tracking-wide`}>About</a>
+          </div>
+          
+          <button
+            onClick={() => setIsDark(!isDark)}
+            className={`p-3 ${t.cardBg} backdrop-blur-2xl ${t.border} rounded-2xl hover:scale-105 transition-all duration-300 ${t.glowBlue} shadow-lg`}
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative z-10 max-w-7xl mx-auto px-8 pt-20 pb-32">
-        <div className="text-center max-w-4xl mx-auto">
-          <div className="inline-flex items-center space-x-2 bg-indigo-900/30 backdrop-blur-sm border border-indigo-500/30 rounded-full px-6 py-2 mb-8 animate-fade-in">
-            <Zap className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm text-indigo-200">AI-Powered Interview Preparation</span>
-          </div>
+      <section className="relative z-10 max-w-6xl mx-auto px-6 pt-20 pb-28 text-center">
+        
+        <div className={`inline-flex items-center space-x-3 ${t.cardBg} backdrop-blur-2xl ${t.border} rounded-full px-5 py-3 mb-12 ${t.glowBlue} shadow-lg`}>
+          <Sparkles className="w-4 h-4 text-blue-500" />
+          <span className={`text-sm font-medium ${t.textSecondary} tracking-wide`}>AI-Powered Interview Preparation</span>
+        </div>
+        
+        <h1 className="mb-8 tracking-tight leading-none" style={{fontSize: 'clamp(48px, 8vw, 84px)', fontWeight: '700', lineHeight: '1.1'}}>
+          <span className={`block ${t.text}`}>Master Your</span>
+          <span className={`block bg-gradient-to-r ${t.accent} bg-clip-text text-transparent`}>Interview Excellence</span>
+        </h1>
+        
+        <p className={`text-lg md:text-xl ${t.textSecondary} mb-12 max-w-2xl mx-auto leading-relaxed font-normal tracking-wide`}
+           style={{fontSize: '18px', lineHeight: '1.6'}}>
+          Upload your resume, add job requirements, and receive personalized AI-generated questions. 
+          <br className="hidden md:block" />
+          Practice intelligently, interview confidently, secure your ideal position.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-20">
+         <Link to="/start-practicing">
+    <button
+      className={`group bg-gradient-to-r ${t.buttonPrimary} text-white px-8 py-4 rounded-2xl font-semibold ${t.glowBlue} shadow-2xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105 tracking-wide`}
+      style={{ fontSize: "16px", fontWeight: "600" }}
+    >
+      <span className="flex items-center">
+        Start Practicing Now
+        <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+      </span>
+    </button>
+  </Link>
           
-          <h1 className="text-6xl md:text-7xl font-extrabold mb-8 leading-tight">
-            <span className="bg-gradient-to-r from-white via-indigo-100 to-purple-200 bg-clip-text text-transparent">
-              Ace Your Next
-            </span>
-            <br />
-            <span className="bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-              Interview
-            </span>
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-            Upload your resume, paste any job description, and get personalized AI-generated interview questions 
-            tailored specifically for you. Practice like a pro, interview with confidence.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <button 
-              onClick={() => setCurrentPage('interview')}
-              className="group relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-2xl hover:shadow-indigo-500/25 transition-all duration-300 transform hover:scale-105"
-            >
-              <span className="relative z-10 flex items-center">
-                Start Practicing Now
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </button>
-            
-            <button className="flex items-center text-gray-300 hover:text-white transition-colors group">
-              <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mr-3 group-hover:bg-white/20 transition-colors">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M8 5v10l8-5-8-5z"/>
-                </svg>
-              </div>
-              Watch Demo
-            </button>
+          <button className={`flex items-center ${t.textSecondary} hover:${t.text} transition-colors group px-6 py-4`}>
+            <div className={`w-12 h-12 ${t.cardBg} backdrop-blur-2xl rounded-2xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform ${t.glowBlue} shadow-lg`}>
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M8 5v10l8-5-8-5z"/>
+              </svg>
+            </div>
+            <span className="font-medium tracking-wide" style={{fontSize: '15px'}}>Watch Demo</span>
+          </button>
+        </div>
+
+        {/* Premium Stats Card */}
+        <div className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-3xl p-10 max-w-3xl mx-auto ${t.glowBlue} shadow-2xl`}>
+          <div className="grid grid-cols-3 gap-12">
+            <div className="text-center">
+              <div className={`text-3xl font-bold mb-2 bg-gradient-to-r ${t.accent} bg-clip-text text-transparent`} style={{fontSize: '32px', fontWeight: '700'}}>25K+</div>
+              <div className={`text-sm ${t.textSecondary} font-medium tracking-wide`}>Questions Generated</div>
+            </div>
+            <div className="text-center">
+              <div className={`text-3xl font-bold mb-2 bg-gradient-to-r ${t.accent} bg-clip-text text-transparent`} style={{fontSize: '32px', fontWeight: '700'}}>99%</div>
+              <div className={`text-sm ${t.textSecondary} font-medium tracking-wide`}>Success Rate</div>
+            </div>
+            <div className="text-center">
+              <div className={`text-3xl font-bold mb-2 bg-gradient-to-r ${t.accent} bg-clip-text text-transparent`} style={{fontSize: '32px', fontWeight: '700'}}>12K+</div>
+              <div className={`text-sm ${t.textSecondary} font-medium tracking-wide`}>Happy Professionals</div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="relative z-10 max-w-7xl mx-auto px-8 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
-            Why Choose AI Interview Pro?
+      <section id="features" className="relative z-10 max-w-6xl mx-auto px-6 py-24">
+        <div className="text-center mb-20">
+          <h2 className={`text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r ${t.accent} bg-clip-text text-transparent tracking-tight`}
+              style={{fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: '700'}}>
+            Why Choose Interview Pro?
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Advanced AI technology meets personalized preparation for your career success
+          <p className={`${t.textSecondary} max-w-2xl mx-auto text-lg font-normal tracking-wide`}
+             style={{fontSize: '18px', lineHeight: '1.6'}}>
+            Advanced artificial intelligence technology meets personalized career preparation
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          <div className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:border-indigo-500/30">
-            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Upload className="w-8 h-8 text-white" />
+          {[
+            { 
+              icon: Upload, 
+              title: "Intelligent Resume Analysis", 
+              desc: "Our advanced AI thoroughly analyzes your professional background, skills, and experience to create questions that showcase your unique strengths and capabilities.",
+              gradient: "from-blue-600 to-blue-700"
+            },
+            { 
+              icon: Target, 
+              title: "Job-Specific Targeting", 
+              desc: "Receive precisely tailored questions based on your target role, industry requirements, and company culture for maximum interview relevance.",
+              gradient: "from-slate-600 to-slate-700"
+            },
+            { 
+              icon: Zap, 
+              title: "Instant Generation", 
+              desc: "Generate comprehensive, professional-grade interview questions in seconds, allowing you to begin practicing immediately and iterate as needed.",
+              gradient: "from-blue-700 to-blue-800"
+            }
+          ].map((feature, idx) => (
+            <div key={idx} className={`${t.cardBg} backdrop-blur-2xl ${t.border} rounded-3xl p-8 hover:scale-105 transition-all duration-500 ${t.glowBlue} shadow-xl group cursor-pointer`}>
+              <div className={`w-14 h-14 bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg`}>
+                <feature.icon className="w-7 h-7 text-white" />
+              </div>
+              <h3 className={`font-semibold mb-4 ${t.text} tracking-tight`} style={{fontSize: '20px', fontWeight: '600'}}>{feature.title}</h3>
+              <p className={`${t.textSecondary} leading-relaxed font-normal tracking-wide`} style={{fontSize: '15px', lineHeight: '1.6'}}>{feature.desc}</p>
             </div>
-            <h3 className="text-2xl font-bold mb-4">Smart Resume Analysis</h3>
-            <p className="text-gray-400 leading-relaxed">
-              Our AI analyzes your resume to understand your skills, experience, and background, creating questions that highlight your strengths.
-            </p>
-          </div>
-
-          <div className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:border-purple-500/30">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Target className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold mb-4">Job-Specific Questions</h3>
-            <p className="text-gray-400 leading-relaxed">
-              Paste any job description and get questions tailored to that specific role, company, and industry requirements.
-            </p>
-          </div>
-
-          <div className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:border-blue-500/30">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Zap className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold mb-4">Instant Generation</h3>
-            <p className="text-gray-400 leading-relaxed">
-              Get comprehensive interview questions in seconds, not hours. Practice immediately and iterate as needed.
-            </p>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="relative z-10 max-w-7xl mx-auto px-8 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-            How It Works
+      {/* Process Section */}
+      <section id="process" className="relative z-10 max-w-6xl mx-auto px-6 py-24">
+        <div className="text-center mb-20">
+          <h2 className={`text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r ${t.accent} bg-clip-text text-transparent tracking-tight`}
+              style={{fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: '700'}}>
+            Simple Three-Step Process
           </h2>
-          <p className="text-xl text-gray-400">Three simple steps to interview success</p>
+          <p className={`${t.textSecondary} text-lg font-normal tracking-wide`} style={{fontSize: '18px'}}>
+            Professional interview preparation in minutes, not hours
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 relative">
-          <div className="text-center group">
-            <div className="relative mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto shadow-2xl group-hover:scale-110 transition-transform">
-                <span className="text-2xl font-bold text-white">1</span>
+        <div className="grid md:grid-cols-3 gap-12">
+          {[
+            { step: "01", title: "Upload Your Resume", desc: "Upload your professional resume in PDF format and let our intelligent AI system analyze your unique background, skills, and experience." },
+            { step: "02", title: "Add Job Requirements", desc: "Paste the complete job description and requirements for your target position to ensure maximum question relevance and specificity." },
+            { step: "03", title: "Practice & Excel", desc: "Receive personalized, professional-grade interview questions instantly and begin practicing with confidence-building preparation." }
+          ].map((item, idx) => (
+            <div key={idx} className="text-center group">
+              <div className={`w-20 h-20 bg-gradient-to-br ${t.buttonPrimary} rounded-3xl flex items-center justify-center mx-auto mb-8 ${t.glowBlue} shadow-2xl group-hover:scale-110 transition-transform duration-300`}>
+                <span className="text-white font-bold text-xl tracking-wide" style={{fontSize: '20px', fontWeight: '700'}}>{item.step}</span>
               </div>
-              <div className="hidden md:block absolute top-10 left-full w-full h-px bg-gradient-to-r from-indigo-500/50 to-transparent" />
+              <h3 className={`font-semibold mb-4 ${t.text} tracking-tight`} style={{fontSize: '20px', fontWeight: '600'}}>{item.title}</h3>
+              <p className={`${t.textSecondary} font-normal tracking-wide leading-relaxed`} style={{fontSize: '15px', lineHeight: '1.6'}}>{item.desc}</p>
             </div>
-            <h3 className="text-2xl font-bold mb-4">Upload Resume</h3>
-            <p className="text-gray-400">Upload your PDF resume and let our AI understand your professional background</p>
-          </div>
-
-          <div className="text-center group">
-            <div className="relative mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto shadow-2xl group-hover:scale-110 transition-transform">
-                <span className="text-2xl font-bold text-white">2</span>
-              </div>
-              <div className="hidden md:block absolute top-10 left-full w-full h-px bg-gradient-to-r from-purple-500/50 to-transparent" />
-            </div>
-            <h3 className="text-2xl font-bold mb-4">Add Job Description</h3>
-            <p className="text-gray-400">Paste the job description for the role you're applying to</p>
-          </div>
-
-          <div className="text-center group">
-            <div className="relative mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-full flex items-center justify-center mx-auto shadow-2xl group-hover:scale-110 transition-transform">
-                <span className="text-2xl font-bold text-white">3</span>
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold mb-4">Get Questions</h3>
-            <p className="text-gray-400">Receive personalized interview questions and start practicing</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="relative z-10 max-w-7xl mx-auto px-8 py-20">
-        <div className="bg-gradient-to-r from-indigo-900/20 via-purple-900/20 to-blue-900/20 backdrop-blur-xl border border-white/10 rounded-3xl p-12">
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="text-5xl font-bold mb-4 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">10K+</div>
-              <p className="text-gray-300 text-lg">Questions Generated</p>
-            </div>
-            <div>
-              <div className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">95%</div>
-              <p className="text-gray-300 text-lg">Success Rate</p>
-            </div>
-            <div>
-              <div className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">2.5K+</div>
-              <p className="text-gray-300 text-lg">Happy Users</p>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="relative z-10 max-w-7xl mx-auto px-8 py-20 text-center">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
-            Ready to Ace Your Interview?
-          </h2>
-          <p className="text-xl text-gray-400 mb-10">
-            Join thousands of professionals who've landed their dream jobs with our AI-powered interview preparation
-          </p>
-          <button 
-            onClick={() => setCurrentPage('interview')}
-            className="group relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-12 py-5 rounded-2xl font-bold text-xl shadow-2xl hover:shadow-indigo-500/30 transition-all duration-300 transform hover:scale-105"
-          >
-            <span className="relative z-10 flex items-center justify-center">
-              Start Your Free Practice
-              <ChevronRight className="ml-2 w-6 h-6 group-hover:translate-x-1 transition-transform" />
-            </span>
-          </button>
-        </div>
+      <section className="relative z-10 max-w-5xl mx-auto px-6 py-24 text-center">
+        <h2 className={`text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r ${t.accent} bg-clip-text text-transparent tracking-tight`}
+            style={{fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: '700'}}>
+          Ready to Excel in Your Interview?
+        </h2>
+        <p className={`${t.textSecondary} mb-12 max-w-2xl mx-auto text-lg font-normal tracking-wide leading-relaxed`}
+           style={{fontSize: '18px', lineHeight: '1.6'}}>
+          Join thousands of successful professionals who have transformed their interview performance 
+          and secured their dream positions with our AI-powered preparation system.
+        </p>
+        <button className={`bg-gradient-to-r ${t.buttonPrimary} text-white px-12 py-5 rounded-2xl font-semibold ${t.glowBlue} shadow-2xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105 group tracking-wide`}
+                style={{fontSize: '18px', fontWeight: '600'}}>
+          <span className="flex items-center justify-center">
+            Begin Your Success Journey
+            <ChevronRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
+          </span>
+        </button>
       </section>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/10 mt-20">
-        <div className="max-w-7xl mx-auto px-8 py-12 text-center">
+      {/* Premium Footer */}
+      <footer className={`relative z-10 ${t.border} border-t mt-20 backdrop-blur-xl`}>
+        <div className="max-w-6xl mx-auto px-6 py-12 text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className={`w-8 h-8 bg-gradient-to-br ${t.buttonPrimary} rounded-xl flex items-center justify-center shadow-lg`}>
               <MessageSquare className="w-4 h-4 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              AI Interview Pro
+            <span className="font-semibold tracking-tight" style={{fontSize: '18px', fontWeight: '600'}}>
+              <span className={`bg-gradient-to-r ${t.accent} bg-clip-text text-transparent`}>Interview</span>
+              <span className={`ml-1 ${t.text}`}>Pro</span>
             </span>
           </div>
-          <p className="text-gray-400 text-sm">
-            &copy; {new Date().getFullYear()} AI Interview Pro. Crafted with <span className="text-pink-400">♥</span> for your success.
+          <p className={`${t.textSecondary} font-normal tracking-wide`} style={{fontSize: '14px'}}>
+            © 2024 Interview Pro. Engineered for professional excellence.
           </p>
         </div>
       </footer>
