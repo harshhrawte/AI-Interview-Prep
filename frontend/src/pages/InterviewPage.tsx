@@ -20,7 +20,6 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   const [recordings, setRecordings] = useState<{ [key: number]: Blob }>({});
   const [cameraEnabled, setCameraEnabled] = useState<boolean>(false);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
-  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);

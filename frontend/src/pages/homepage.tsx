@@ -250,7 +250,7 @@ const HomePage = () => {
             </span>
           </div>
           <p className={`${t.textSecondary} font-normal tracking-wide`} style={{fontSize: '14px'}}>
-            © 2024 Interview Pro. Engineered for professional excellence.
+            © 2025 Interview Pro. Engineered for professional excellence.
           </p>
         </div>
       </footer>
