@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, Upload, MessageSquare, Mic, Square, Play, Pause, Video, VideoOff, Sun, Moon, ChevronRight } from 'lucide-react';
+import { ChevronLeft, Upload, MessageSquare, Mic, Square, Play, Pause, Video, VideoOff, Sun, Moon, ChevronRight, AlertTriangle } from 'lucide-react';
 
 interface InterviewPageProps {
   onBack: () => void;
@@ -20,10 +20,20 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   const [recordings, setRecordings] = useState<{ [key: number]: Blob }>({});
   const [cameraEnabled, setCameraEnabled] = useState<boolean>(false);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  
+  // Monitoring states
+  const [monitoringActive, setMonitoringActive] = useState<boolean>(false);
+  const [alerts, setAlerts] = useState<string[]>([]);
+  const [monitoringStatus, setMonitoringStatus] = useState<string>("Not started");
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const monitoringIntervalRef = useRef<number | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const API_BASE = "http://localhost:8000";
 
   const theme = {
     dark: { bg: 'bg-black', text: 'text-white', textSecondary: 'text-slate-400', cardBg: 'bg-slate-900/40', border: 'border-slate-800/50', accent: 'from-slate-100 via-blue-100 to-slate-200', buttonPrimary: 'from-blue-600 via-blue-700 to-blue-800', glowBlue: 'shadow-blue-500/20' },
@@ -38,13 +48,104 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
         setMediaStream(stream);
         if (videoRef.current) videoRef.current.srcObject = stream;
         setCameraEnabled(true);
+        
+        // Start monitoring when camera is enabled during interview
+        if (showQuestions && !monitoringActive) {
+          await startMonitoring();
+        }
       } else {
         if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
         setMediaStream(null);
         setCameraEnabled(false);
+        
+        // Stop monitoring when camera is disabled
+        if (monitoringActive) {
+          await stopMonitoring();
+        }
       }
     } catch (err) {
       setError("Camera access denied. Please enable camera permissions.");
+    }
+  };
+
+  const startMonitoring = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/start_monitoring`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId })
+      });
+      
+      if (res.ok) {
+        setMonitoringActive(true);
+        setMonitoringStatus("Active");
+        
+        // Start periodic frame capture and processing
+        monitoringIntervalRef.current = window.setInterval(() => {
+          captureAndProcessFrame();
+        }, 1000); // Process frame every second
+      }
+    } catch (err) {
+      console.error("Failed to start monitoring:", err);
+    }
+  };
+
+  const stopMonitoring = async () => {
+    try {
+      if (monitoringIntervalRef.current) {
+        clearInterval(monitoringIntervalRef.current);
+        monitoringIntervalRef.current = null;
+      }
+      
+      await fetch(`${API_BASE}/stop_monitoring`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId })
+      });
+      
+      setMonitoringActive(false);
+      setMonitoringStatus("Stopped");
+    } catch (err) {
+      console.error("Failed to stop monitoring:", err);
+    }
+  };
+
+  const captureAndProcessFrame = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) return;
+    
+    // Set canvas size to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw current video frame to canvas
+    ctx.drawImage(video, 0, 0);
+    
+    // Convert canvas to base64
+    const frameData = canvas.toDataURL('image/jpeg', 0.8);
+    
+    try {
+      const res = await fetch(`${API_BASE}/process_frame`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          session_id: sessionId,
+          frame: frameData 
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setAlerts(data.alerts || []);
+        setMonitoringStatus(data.status || "OK");
+      }
+    } catch (err) {
+      console.error("Frame processing error:", err);
     }
   };
 
@@ -59,7 +160,7 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("http://localhost:8000/upload_resume", { method: "POST", body: formData });
+      const res = await fetch(`${API_BASE}/upload_resume`, { method: "POST", body: formData });
       const data = await res.json();
       if (data.session_id) setSessionId(data.session_id);
       else setError("Failed to upload resume.");
@@ -80,7 +181,7 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
       const formData = new FormData();
       formData.append("session_id", sessionId);
       formData.append("job_description", jobDescription);
-      const res = await fetch("http://localhost:8000/generate_questions", { method: "POST", body: formData });
+      const res = await fetch(`${API_BASE}/generate_questions`, { method: "POST", body: formData });
       const data = await res.json();
       
       if (data.questions) {
@@ -155,16 +256,21 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     }
   };
 
-  const backToSetup = () => {
+  const backToSetup = async () => {
+    if (monitoringActive) {
+      await stopMonitoring();
+    }
     setShowQuestions(false);
     setCurrentQuestionIndex(0);
     setRecordings({});
+    setAlerts([]);
     stopPlaying();
   };
 
   useEffect(() => {
     return () => {
       if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
+      if (monitoringIntervalRef.current) clearInterval(monitoringIntervalRef.current);
     };
   }, [mediaStream]);
 
@@ -172,6 +278,8 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     return (
       <div className={`h-screen w-full transition-all duration-700 ${t.bg} ${t.text} flex overflow-hidden`}
            style={{fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'}}>
+        
+        <canvas ref={canvasRef} className="hidden" />
         
         <div className="w-2/5 p-6 flex flex-col">
           <div className="flex items-center justify-between mb-6">
@@ -184,11 +292,32 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
             </button>
           </div>
           
-          <div className={`relative ${isDark ? 'bg-slate-900' : 'bg-slate-100'} rounded-3xl overflow-hidden aspect-video flex-1 mb-6 ${t.glowBlue} shadow-2xl`}>
+          <div className={`relative ${isDark ? 'bg-slate-900' : 'bg-slate-100'} rounded-3xl overflow-hidden aspect-video flex-1 mb-4 ${t.glowBlue} shadow-2xl`}>
             <video ref={videoRef} autoPlay muted className="w-full h-full object-cover" />
             {!cameraEnabled && (
               <div className={`absolute inset-0 flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
                 <VideoOff className={`w-16 h-16 ${t.textSecondary}`} />
+              </div>
+            )}
+            
+            {/* Monitoring status overlay */}
+            {monitoringActive && (
+              <div className="absolute top-4 left-4 right-4">
+                <div className={`${isDark ? 'bg-slate-900/90' : 'bg-white/90'} backdrop-blur-sm rounded-lg p-3`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold flex items-center">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" />
+                      Monitoring Active
+                    </span>
+                    <span className="text-xs">{monitoringStatus}</span>
+                  </div>
+                  {alerts.length > 0 && (
+                    <div className="flex items-center text-xs text-red-500 font-medium">
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      {alerts.join(', ')}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -197,6 +326,12 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
             {cameraEnabled ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
             <span>{cameraEnabled ? 'Turn Off Camera' : 'Turn On Camera'}</span>
           </button>
+          
+          {cameraEnabled && (
+            <p className="text-xs text-center mt-3 text-yellow-500">
+              ⚠️ Anti-cheating monitoring is active
+            </p>
+          )}
         </div>
 
         <div className="w-3/5 p-6 flex flex-col h-full">
