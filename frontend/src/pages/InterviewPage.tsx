@@ -34,6 +34,7 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [recordings, setRecordings] = useState<{ [key: number]: Blob }>({});
+  const [transcript, setTranscript] = useState<string>("");
   const [cameraEnabled, setCameraEnabled] = useState<boolean>(false);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   const [monitoringActive, setMonitoringActive] = useState<boolean>(false);
@@ -58,6 +59,7 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const speechRecognitionRef = useRef<any>(null);
   const monitoringIntervalRef = useRef<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -247,7 +249,43 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
       };
       recorder.start();
       mediaRecorderRef.current = recorder;
+      
+      // Initialize Speech Recognition
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        
+        recognition.onresult = (event: any) => {
+          let transcript = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          setTranscript(transcript);
+        };
+        
+        recognition.onerror = (event: any) => {
+          console.error("Speech recognition error:", event.error);
+        };
+        
+        recognition.onend = () => {
+          // Restart recognition if still recording (check mediaRecorderRef to avoid stale state)
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording' && speechRecognitionRef.current) {
+            try {
+              speechRecognitionRef.current.start();
+            } catch (err) {
+              console.error("Failed to restart recognition:", err);
+            }
+          }
+        };
+        
+        recognition.start();
+        speechRecognitionRef.current = recognition;
+      }
+      
       setIsRecording(true);
+      setTranscript("");
     } catch (err) {
       setError("Could not access microphone.");
     }
@@ -257,6 +295,11 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+    }
+    // Stop speech recognition
+    if (speechRecognitionRef.current) {
+      speechRecognitionRef.current.stop();
+      speechRecognitionRef.current = null;
     }
   };
 
@@ -289,6 +332,7 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     if (newIndex >= 0 && newIndex < questions.length) {
       setCurrentQuestionIndex(newIndex);
       stopPlaying();
+      setTranscript("");
     }
   };
 
@@ -453,8 +497,17 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
     return () => {
       if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
       if (monitoringIntervalRef.current) clearInterval(monitoringIntervalRef.current);
+      if (speechRecognitionRef.current) {
+        speechRecognitionRef.current.stop();
+        speechRecognitionRef.current = null;
+      }
     };
   }, [mediaStream]);
+  
+  // Clear transcript when question changes
+  useEffect(() => {
+    setTranscript("");
+  }, [currentQuestionIndex]);
 
   if (showQuestions) {
     return (
@@ -631,10 +684,18 @@ const InterviewPage: React.FC<InterviewPageProps> = ({ onBack }) => {
                       </button>
                     )}
                   </div>
-                  <div className="text-center">
+                  <div className="text-center mb-4">
                     {recordings[currentQuestionIndex] && <div className="text-green-400 font-medium tracking-wide" style={{fontSize: '13px'}}>✓ Answer Recorded Successfully</div>}
                     {isRecording && <div className="text-red-400 animate-pulse font-medium tracking-wide" style={{fontSize: '13px'}}>🔴 Recording in Progress...</div>}
                   </div>
+                  <textarea 
+                    value={transcript} 
+                    onChange={(e) => setTranscript(e.target.value)}
+                    placeholder={isRecording ? "Your speech will appear here..." : "Transcript will appear here when recording..."}
+                    className={`w-full h-32 p-4 ${t.border} rounded-2xl mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none ${t.cardBg} ${t.text} backdrop-blur-xl font-normal tracking-wide`}
+                    style={{fontSize: '14px', lineHeight: '1.5'}}
+                    readOnly={isRecording}
+                  />
                 </div>
                 <div className="flex justify-between items-center">
                   <button onClick={() => goToQuestion('prev')} disabled={currentQuestionIndex === 0} className={`flex items-center space-x-2 bg-gradient-to-r ${t.buttonPrimary} hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold tracking-wide hover:scale-105 ${t.glowBlue} shadow-lg`} style={{fontSize: '14px', fontWeight: '600'}}>

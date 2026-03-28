@@ -23,6 +23,7 @@ from backend.services.monitoring_service import (
 from backend.services.detection_service import (
     detect_phone_with_yolo,
     person_in_detections,
+    phone_in_detections,
     get_face_mesh,
     is_yolo_available,
     get_yolo_info,
@@ -155,11 +156,13 @@ async def room_scan_endpoint(request: FrameRequest):
 
         person_detected = False
         person_count = 0
+        phone_detected = False
 
         if is_yolo_available():
             dets = detect_phone_with_yolo(frame)
             person_detected, persons = person_in_detections(dets)
             person_count = len(persons)
+            phone_detected, _ = phone_in_detections(dets)
 
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         face_mesh = get_face_mesh()
@@ -172,6 +175,7 @@ async def room_scan_endpoint(request: FrameRequest):
             "person_detected": detected,
             "person_count": person_count,
             "face_detected": face_detected,
+            "phone_detected": phone_detected,
             "timestamp": datetime.utcnow().isoformat(),
         }
 

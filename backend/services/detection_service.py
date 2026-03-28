@@ -34,6 +34,12 @@ hands_module = mp_hands.Hands(
 yolo_model = None
 yolo_names = None
 
+# Basic, conservative thresholds to make proctoring
+# more reliable while avoiding obvious false positives.
+YOLO_MIN_CONF_GENERIC = 0.30
+YOLO_MIN_CONF_PHONE = 0.40
+YOLO_MIN_CONF_PERSON = 0.50
+
 
 def load_yolo_model():
     """
@@ -88,13 +94,29 @@ def detect_phone_with_yolo(frame):
         return detections
 
     try:
+        # YOLOv5-style inference
         results = model(frame)
 
+        h, w = frame.shape[:2]
+        img_area = max(float(h * w), 1.0)
+
         for *box, conf, cls in results.xyxy[0].cpu().numpy():
+            conf = float(conf)
+            if conf < YOLO_MIN_CONF_GENERIC:
+                continue
+
             cls = int(cls)
             label = yolo_names[cls] if yolo_names else str(cls)
             x1, y1, x2, y2 = map(int, box[:4])
-            detections.append((label, float(conf), (x1, y1, x2, y2)))
+
+            # Filter out extremely tiny boxes that are almost
+            # always noise for proctoring purposes.
+            box_area = max(float((x2 - x1) * (y2 - y1)), 0.0)
+            area_ratio = box_area / img_area
+            if area_ratio < 0.002:  # ~0.2% of the frame
+                continue
+
+            detections.append((label, conf, (x1, y1, x2, y2)))
 
     except Exception as e:
         print("YOLO detection error:", e)
@@ -103,18 +125,32 @@ def detect_phone_with_yolo(frame):
 
 
 def phone_in_detections(dets):
-    """Check if phone is in detections"""
+    """
+    Check if phone is in detections with a slightly
+    higher confidence requirement for reliability.
+    Returns (bool, best_match_or_none)
+    """
+    best = None
     for label, conf, box in dets:
         if "phone" in label.lower() or "cell" in label.lower() or "mobile" in label.lower():
-            return True, (label, conf, box)
+            if conf >= YOLO_MIN_CONF_PHONE:
+                if best is None or conf > best[1]:
+                    best = (label, conf, box)
+    if best is not None:
+        return True, best
     return False, None
 
 
 def person_in_detections(dets):
-    """Check if person is in detections"""
+    """
+    Check if person is in detections.
+    Uses a higher confidence threshold so that
+    extra people in the frame are flagged more
+    reliably and small artifacts are ignored.
+    """
     persons = []
     for label, conf, box in dets:
-        if "person" in label.lower():
+        if "person" in label.lower() and conf >= YOLO_MIN_CONF_PERSON:
             persons.append((label, conf, box))
     return len(persons) > 0, persons
 
